@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AdQuiz デモ</title>
+<style>
+  html,body{margin:0;height:100%;font-family:"Hiragino Maru Gothic ProN","Hiragino Kaku Gothic ProN",sans-serif;background:#1b2a41;color:#fff}
+  #demo{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;gap:14px;text-align:center;padding:16px;box-sizing:border-box}
+  h1{margin:0;font-size:22px}
+  #score{font-size:38px;font-weight:bold}
+  button.d{font-size:18px;padding:12px 20px;border:0;border-radius:14px;background:#ffd166;color:#222;font-weight:bold}
+  button.d.sub{background:#8ecae6}
+  label{font-size:14px} select,input{font-size:16px;padding:4px}
+  #log{font-size:14px;opacity:.8;min-height:20px}
+  #state{font-size:13px;opacity:.7}
+</style>
+</head>
+<body>
+<div id="demo">
+  <h1>AdQuiz デモ（ダミーゲーム）</h1>
+  <div id="score">0 − 0</div>
+  <div id="state">ゲーム: 進行中</div>
+  <div>
+    <button class="d" id="goal">ゴール！（自分）</button>
+    <button class="d sub" id="cpu">ゴール！（CPU）</button>
+  </div>
+  <div>
+    <label>学年
+      <select id="grade">
+        <option value="[2]">2年</option>
+        <option value="[2,3]" selected>2〜3年</option>
+        <option value="[3,4]">3〜4年</option>
+        <option value="[4]">4年（計算のみ）</option>
+        <option value="[1,2]">1〜2年</option>
+      </select>
+    </label>
+    <label>　N回ごと <input id="everyN" type="number" min="1" value="3" style="width:3em"></label>
+  </div>
+  <button class="d sub" id="now">いますぐ こうこくを だす</button>
+  <div id="log">ゴールを押すと、N回に1回 広告が出ます</div>
+</div>
+
+<script src="./ad-quiz.js"></script>
+<script>
+  // ★ 組み込みの最小例 ─ 広告が読み込めなくてもゲームが動くようにしておく
+  const hasAd = typeof AdQuiz !== 'undefined';
+  let me = 0, cpu = 0, paused = false;
+  const $ = id => document.getElementById(id);
+
+  if (hasAd) {
+    AdQuiz.configure({
+      onShow:  () => { paused = true;  $('state').textContent = 'ゲーム: 一時停止中（広告）'; },
+      onClose: () => { paused = false; $('state').textContent = 'ゲーム: 進行中'; }
+    });
+    AdQuiz.configure({ gameId: 'hockey' });
+    AdQuiz.loadProblems('./problems.sample.json').then(n => { if (n) $('log').textContent = `手作り問題を ${n}件 読み込みました`; });
+  }
+
+  function goal(who) {
+    if (paused) return;
+    who === 'me' ? me++ : cpu++;
+    $('score').textContent = `${me} − ${cpu}`;
+    if (hasAd) AdQuiz.tick({ onClose: r => {
+      $('log').textContent = r.correct ? `せいかい！（${r.tries}かいめ）→ ごほうびを あげる` : 'こうこくを とじたよ（ごほうびなし）';
+    }});
+  }
+  $('goal').onclick = () => goal('me');
+  $('cpu').onclick  = () => goal('cpu');
+  $('now').onclick  = () => hasAd && AdQuiz.show();
+  $('grade').onchange = e => hasAd && AdQuiz.configure({ grade: JSON.parse(e.target.value) });
+  $('everyN').onchange = e => hasAd && (AdQuiz.configure({ everyN: +e.target.value || 3 }), AdQuiz.reset());
+</script>
+</body>
+</html>

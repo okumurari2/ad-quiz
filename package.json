@@ -1,0 +1,9 @@
+{
+  "name": "ad-quiz",
+  "version": "1.1.0",
+  "description": "インタースティシャル広告パロディ風クイズ（小2〜4の計算・漢字）。依存なし・単一ファイル",
+  "main": "ad-quiz.js",
+  "scripts": { "test": "node test.js" },
+  "devDependencies": { "jsdom": "^24.0.0" },
+  "license": "MIT"
+}
